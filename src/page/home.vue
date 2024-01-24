@@ -1,12 +1,8 @@
 <template>
-  <div>home page</div>
-  <button @click="toAbout">toAbout</button>
+  <div class="p-10 text-white">
+    Home
+  </div>
 </template>
 
 <script setup>
-import router from "../routes";
-
-const toAbout = () => {
-  router.push("/about").catch(() => {});
-};
 </script>
