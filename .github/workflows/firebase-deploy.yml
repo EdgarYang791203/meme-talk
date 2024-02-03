@@ -1,0 +1,31 @@
+name: Firebase Deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.0.0
+
+      - name: Install Dependencies and Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Firebase Deploy
+        run: |
+          npx firebase use meme-talk
+          npx firebase deploy --only hosting
+        env:
+          FIREBASE_TOKEN: 1//0eUljfyCM4MAMCgYIARAAGA4SNwF-L9IrUUUgoL2-nWVYTmcWevYH_knFh5pKvuXMEqDqeSnXvjh_Q7BSueM9i2Fxzl12W1eknMM
