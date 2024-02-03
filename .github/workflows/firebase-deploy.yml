@@ -29,9 +29,9 @@ jobs:
       - name: Firebase Deploy
         run: |
           npx firebase use meme-talk-4adb4
-          npx firebase deploy --token '${{ secrets.GITHUB_TOKEN }}' --only hosting
+          npx firebase deploy --token '${{ secrets.FIREBASE_TOKEN }}' --only hosting
 
       - name: Debug
         run: cat /home/runner/.npm/_logs/2024-02-03T12_54_50_236Z-debug-0.log
         env:
-          FIREBASE_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          FIREBASE_TOKEN: '${{ secrets.FIREBASE_TOKEN }}'
