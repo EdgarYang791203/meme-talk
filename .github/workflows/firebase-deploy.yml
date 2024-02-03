@@ -17,6 +17,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.0.0
+      
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
       - name: Install Dependencies and Build
         run: |
@@ -27,5 +30,9 @@ jobs:
         run: |
           npx firebase use meme-talk-4adb4
           npx firebase deploy --only hosting
+
+      - name: Debug
+        run: cat /home/runner/.npm/_logs/2024-02-03T12_54_50_236Z-debug-0.log
         env:
-          FIREBASE_TOKEN: 1//0eUljfyCM4MAMCgYIARAAGA4SNwF-L9IrUUUgoL2-nWVYTmcWevYH_knFh5pKvuXMEqDqeSnXvjh_Q7BSueM9i2Fxzl12W1eknMM
+          FIREBASE_TOKEN: 1//0e_Ww3fM0uoeUCgYIARAAGA4SNwF-L9IrRuPaKNHsevuDoGcvhgrWtHjm-CzUdwfXl231Jmm2vEjiGMWKrQsmNFR1C2YTCYoZgA4
+        shell: /bin/bash -e {0}
