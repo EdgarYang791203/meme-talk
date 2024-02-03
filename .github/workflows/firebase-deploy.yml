@@ -34,5 +34,5 @@ jobs:
       - name: Debug
         run: cat /home/runner/.npm/_logs/2024-02-03T12_54_50_236Z-debug-0.log
         env:
-          FIREBASE_TOKEN: 1//0e_Ww3fM0uoeUCgYIARAAGA4SNwF-L9IrRuPaKNHsevuDoGcvhgrWtHjm-CzUdwfXl231Jmm2vEjiGMWKrQsmNFR1C2YTCYoZgA4
+          FIREBASE_TOKEN: 1//0eujC7fQ5RIGeCgYIARAAGA4SNwF-L9IrEj2FyYIuDOCVY55EzX3Gt3Aoqez9tap4npa9QBrTTGo0S9Up6PxEEz-0brL0JLNOHRg
         shell: /bin/bash -e {0}
