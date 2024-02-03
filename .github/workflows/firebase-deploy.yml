@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 18
       
-      -name: Check Firebase CLI version
-      run: npx firebase --version
+      - name: Check Firebase CLI version
+        run: npx firebase --version
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
