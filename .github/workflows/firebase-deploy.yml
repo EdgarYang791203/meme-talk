@@ -25,7 +25,7 @@ jobs:
 
       - name: Firebase Deploy
         run: |
-          npx firebase use meme-talk
+          npx firebase use meme-talk-4adb4
           npx firebase deploy --only hosting
         env:
           FIREBASE_TOKEN: 1//0eUljfyCM4MAMCgYIARAAGA4SNwF-L9IrUUUgoL2-nWVYTmcWevYH_knFh5pKvuXMEqDqeSnXvjh_Q7BSueM9i2Fxzl12W1eknMM
