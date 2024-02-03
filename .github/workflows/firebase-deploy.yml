@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: 18
       
+      -name: Check Firebase CLI version
+      run: npx firebase --version
+
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
@@ -29,7 +32,7 @@ jobs:
       - name: Firebase Deploy
         run: |
           npx firebase use meme-talk-4adb4
-          npx firebase deploy --toke 1//0eujC7fQ5RIGeCgYIARAAGA4SNwF-L9IrEj2FyYIuDOCVY55EzX3Gt3Aoqez9tap4npa9QBrTTGo0S9Up6PxEEz-0brL0JLNOHRg --only hosting
+          npx firebase deploy --token 1//0eujC7fQ5RIGeCgYIARAAGA4SNwF-L9IrEj2FyYIuDOCVY55EzX3Gt3Aoqez9tap4npa9QBrTTGo0S9Up6PxEEz-0brL0JLNOHRg --only hosting
 
       - name: Debug
         run: cat /home/runner/.npm/_logs/2024-02-03T12_54_50_236Z-debug-0.log
