@@ -29,7 +29,7 @@ jobs:
       - name: Firebase Deploy
         run: |
           npx firebase use meme-talk-4adb4
-          npx firebase deploy --token 1//0e_Ww3fM0uoeUCgYIARAAGA4SNwF-L9IrRuPaKNHsevuDoGcvhgrWtHjm-CzUdwfXl231Jmm2vEjiGMWKrQsmNFR1C2YTCYoZgA4 --only hosting
+          npx firebase deploy --only hosting
 
       - name: Debug
         run: cat /home/runner/.npm/_logs/2024-02-03T12_54_50_236Z-debug-0.log
