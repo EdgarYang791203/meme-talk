@@ -3,6 +3,29 @@ import router from "./routes";
 import { ref, onMounted, computed, reactive, watchEffect } from 'vue'
 import pageBg from './assets/page-bg.jpeg'
 
+import { initializeApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
+import { GoogleAuthProvider, getAuth, signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
+
+/** 初始化 Firebase */
+const firebaseConfig = {
+  apiKey: "AIzaSyCO5QzTyGMOhbq1etOPxEeqgLf_5NsJOyk",
+  authDomain: "meme-talk-4adb4.firebaseapp.com",
+  projectId: "meme-talk-4adb4",
+  storageBucket: "meme-talk-4adb4.appspot.com",
+  messagingSenderId: "501625661038",
+  appId: "1:501625661038:web:bba35607396a8bfe29287f",
+  measurementId: "G-ZWVBHHKYRC"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+
+let currentUser = reactive(null)
+
+let firebaseAuth = reactive(null)
+
+const isLogin = ref(false)
+
 const scrollOver = ref(false)
 
 const bookRef = ref<HTMLElement | null>(null)
@@ -10,6 +33,43 @@ const bookRef = ref<HTMLElement | null>(null)
 const bookScrollTop = ref(0)
 
 const hasFliped = ref(false)
+
+const handleLogin = (user) => {
+  if (user) {
+    currentUser = {
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL
+    }
+    isLogin.value = true
+  } else {
+    currentUser = null;
+    isLogin.value = false
+  }
+}
+
+const handleSingnIn = () => {
+  const provider = new GoogleAuthProvider();
+  if (firebaseAuth && provider) {
+    signInWithPopup(firebaseAuth, provider)
+      .then((result => {
+        const { user } = result
+        if (user) handleLogin(user)
+      }))
+      .catch(error => console.log(error))
+  }
+}
+
+const handleSingnOut = () => {
+  if (firebaseAuth) {
+    signOut(firebaseAuth)
+      .then(res => {
+        handleLogin(null)
+      })
+      .catch(error => console.log(error))
+  }
+}
 
 const pageBgStyle = computed(() => {
   return {
@@ -62,14 +122,25 @@ const flipStyle3 = computed(() => {
 })
 
 const setScrollOver = (val) => {
-  scrollOver.value = val 
+  scrollOver.value = val
 }
+
 
 onMounted(() => {
   window.addEventListener('scroll', () => {
     const overHeigth = window.scrollY > 200
     setScrollOver(overHeigth)
   });
+  firebaseAuth = getAuth();
+  if (firebaseApp && firebaseApp) {
+    onAuthStateChanged(firebaseAuth, (user) => {
+      if (user) {
+        handleLogin(user)
+      } else {
+        // throw new Error('get user error')
+      }
+    })
+  }
 })
 
 
@@ -79,8 +150,20 @@ const toAbout = () => {
 </script>
 
 <template>
-  <header :class="`text-center shadow flex px-3 ${scrollOver ? 'justify-start sticky top-0 left-0 z-10 bg-[#870000] animate-[slide-down_0.5s_ease-in-out]' : 'justify-center bg-transparent'}`">
+  <header
+    :class="`text-center shadow flex px-3 justify-between ${scrollOver ? 'sticky top-0 left-0 z-10 bg-[#870000] animate-[slide-down_0.5s_ease-in-out]' : ' bg-transparent'}`">
+    <span :class="isLogin ? 'w-[148px]' : 'w-[36px]'" v-if="!scrollOver"></span>
     <h1 class="font-bold text-white text-4xl py-1">MEME Talk</h1>
+    <button v-if="!isLogin" class="p-0 bg-transparent border-none outline-none" @click="handleSingnIn">
+      <img class="w-[36px]" src="./assets/google-icon.svg" alt="google-icon">
+    </button>
+    <div class="flex items-center" v-else>
+      <span class="w-[36px] h-[36px] rounded mr-2 bg-cover" v-if="currentUser?.photoURL" :style="{ backgroundImage: `url(${currentUser.photoURL})` }"></span>
+      <span class="text-white pr-2 text-xl" v-if="currentUser">{{ currentUser.displayName }}</span>
+      <button class="p-0 bg-transparent border-none outline-none" @click="handleSingnOut">
+        <img class="w-[36px] brightness-200" src="./assets/sign-out-icon.svg" alt="google-icon">
+      </button>
+    </div>
   </header>
   <div class="nav-btns text-center">
     <button @click="toAbout">toAbout</button>
@@ -139,9 +222,6 @@ const toAbout = () => {
 </template>
 
 <style>
-#app {
-  overflow: hidden;
-}
 .layout {
   position: relative;
   z-index: 1;
