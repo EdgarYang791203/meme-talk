@@ -1,8 +1,7 @@
 <template>
-  <div class="p-10 text-white">
-    Home
+  <div class="text-white">
+    <div class="bg-gray w-full h-[300px]">drop zone</div>
   </div>
 </template>
 
-<script setup>
-</script>
+<script setup></script>

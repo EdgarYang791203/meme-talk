@@ -1,6 +1,8 @@
 <script setup>
 import router from "./routes";
 import { ref, onMounted, computed, reactive, watchEffect } from "vue";
+import { useUserStore } from "./stores/user";
+import { useMemeStore } from "./stores/meme";
 import pageBg from "./assets/page-bg.jpeg";
 
 import { initializeApp } from "firebase/app";
@@ -13,9 +15,9 @@ import {
 import {
   getFirestore,
   collection,
-  addDoc,
   doc,
   getDoc,
+  setDoc,
   onSnapshot,
 } from "firebase/firestore";
 import {
@@ -26,15 +28,26 @@ import {
   signOut,
 } from "firebase/auth";
 
-/** 初始化 Firebase */
+// TODO: 會員相關資料
+const userStore = useUserStore();
+const isLogin = computed(() => userStore.isLogin);
+const userInfo = computed(() => userStore.userInfo);
+const allMembers = computed(() => userStore.allMembers);
+const { addMember } = userStore;
+// TODO: 迷因相關資料
+const memeStore = useMemeStore();
+const memeList = computed(() => memeStore.memeList);
+const { setList } = memeStore;
+
+// TODO: 初始化 Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyCO5QzTyGMOhbq1etOPxEeqgLf_5NsJOyk",
-  authDomain: "meme-talk-4adb4.firebaseapp.com",
-  projectId: "meme-talk-4adb4",
-  storageBucket: "meme-talk-4adb4.appspot.com",
-  messagingSenderId: "501625661038",
-  appId: "1:501625661038:web:bba35607396a8bfe29287f",
-  measurementId: "G-ZWVBHHKYRC",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -42,22 +55,17 @@ const db = getFirestore(firebaseApp);
 const storage = getStorage();
 const listRef = Ref(storage, "images/");
 
-let currentUser = reactive(null);
-
 let firebaseAuth = reactive(null);
 
-const isLogin = ref(false);
-
 const scrollOver = ref(false);
-
-const bookRef = (ref < HTMLElement) | (null > null);
 
 const bookScrollTop = ref(0);
 
 const hasFliped = ref(false);
 
-let imageList = reactive([]);
+let articles = reactive([]);
 
+// TODO: 取得所有梗圖
 const getImages = async () => {
   try {
     const res = await listAll(listRef); // 取得清單
@@ -67,28 +75,44 @@ const getImages = async () => {
         fullPath: itemRef.fullPath,
       }))
     );
-    imageList = urls;
+    setList(urls);
   } catch (error) {
     console.error("Error getting download URLs", error);
   } finally {
   }
 };
 
-const handleLogin = (user) => {
+// TODO: 判斷登入、解析登入資料
+const handleLogin = async (user) => {
   if (user) {
-    currentUser = {
+    const userData = {
       uid: user.uid,
       displayName: user.displayName,
       email: user.email,
       photoURL: user.photoURL,
     };
-    isLogin.value = true;
+    if (user.uid) {
+      const docRef = doc(db, "users", user.uid);
+      const docSnapshot = await getDoc(docRef);
+      if (docSnapshot.exists()) {
+        // console.log(docSnapshot.data());
+      } else {
+        await setDoc(docRef, userData);
+      }
+      userStore.$patch({
+        isLogin: true,
+        userInfo: userData,
+      });
+    }
   } else {
-    currentUser = null;
-    isLogin.value = false;
+    userStore.$patch({
+      isLogin: false,
+      userInfo: {},
+    });
   }
 };
 
+// TODO: google 登入
 const handleSingnIn = () => {
   const provider = new GoogleAuthProvider();
   if (firebaseAuth && provider) {
@@ -101,6 +125,7 @@ const handleSingnIn = () => {
   }
 };
 
+// TODO: firebase 登出
 const handleSingnOut = () => {
   if (firebaseAuth) {
     signOut(firebaseAuth)
@@ -126,13 +151,6 @@ watchEffect(() => {
     hasFliped.value = true;
   }
 });
-
-const book = reactive([
-  { id: 1, transform: "none" },
-  { id: 2, transform: "none" },
-  { id: 3, transform: "none" },
-  { id: 4, transform: "none" },
-]);
 
 const bookScrollListener = ($event) => {
   const scrollTop = $event?.target?.scrollTop;
@@ -183,9 +201,9 @@ onMounted(() => {
     setScrollOver(overHeigth);
   });
   firebaseAuth = getAuth();
-  if (firebaseApp && firebaseApp) {
-    onAuthStateChanged(firebaseAuth, (user) => {
-      if (user) {
+  if (firebaseApp && firebaseAuth) {
+    onAuthStateChanged(firebaseAuth, async (user) => {
+      if (user && user.uid) {
         handleLogin(user);
       } else {
         // throw new Error('get user error')
@@ -193,6 +211,32 @@ onMounted(() => {
     });
   }
   getImages();
+  const userCollection = collection(db, "users");
+  onSnapshot(userCollection, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        // 新增的貼文
+        const postData = change.doc.data();
+        addMember(postData);
+      }
+    });
+  });
+  const articleCollection = collection(db, "upload");
+  onSnapshot(articleCollection, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        // 新增的貼文
+        const postData = change.doc.data();
+        articles.push(postData);
+      }
+      // if (change.type === "modified") {
+      //   console.log("修改貼文：", change.doc.data());
+      // }
+      // if (change.type === "removed") {
+      //   console.log("刪除貼文：", change.doc.data());
+      // }
+    });
+  });
 });
 
 const toAbout = () => {
@@ -208,23 +252,23 @@ const toAbout = () => {
         : ' bg-transparent'
     }`"
   >
-    <span :class="isLogin ? 'w-[148px]' : 'w-[36px]'" v-if="!scrollOver"></span>
     <h1 class="font-bold text-white text-4xl py-1">MEME Talk</h1>
     <button
       v-if="!isLogin"
-      class="p-0 bg-transparent border-none outline-none"
+      class="p-0 bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none"
       @click="handleSingnIn"
     >
       <img class="w-[36px]" src="./assets/google-icon.svg" alt="google-icon" />
     </button>
     <div class="flex items-center" v-else>
-      <span
-        class="w-[36px] h-[36px] rounded mr-2 bg-cover"
-        v-if="currentUser?.photoURL"
-        :style="{ backgroundImage: `url(${currentUser.photoURL})` }"
-      ></span>
-      <span class="text-white pr-2 text-xl" v-if="currentUser">{{
-        currentUser.displayName
+      <img
+        v-if="userInfo.photoURL"
+        class="w-[36px] h-[36px] rounded mr-2 inline-block"
+        :src="userInfo.photoURL"
+        alt="headshot"
+      />
+      <span class="text-white pr-2 text-xl" v-if="userInfo">{{
+        userInfo.displayName
       }}</span>
       <button
         class="p-0 bg-transparent border-none outline-none"
@@ -259,8 +303,8 @@ const toAbout = () => {
         }"
       >
         <img
-          v-if="imageList.length"
-          :src="imageList[0].url"
+          v-if="memeList.length"
+          :src="memeList[0].url"
           class="w-full"
           alt="meme"
         />
@@ -273,8 +317,8 @@ const toAbout = () => {
         }"
       >
         <img
-          v-if="imageList.length"
-          :src="imageList[1].url"
+          v-if="memeList.length"
+          :src="memeList[1].url"
           class="w-full"
           alt="meme"
         />
@@ -287,8 +331,8 @@ const toAbout = () => {
         }"
       >
         <img
-          v-if="imageList.length"
-          :src="imageList[2].url"
+          v-if="memeList.length"
+          :src="memeList[2].url"
           class="w-full max-h-full"
           alt="meme"
         />
@@ -301,8 +345,8 @@ const toAbout = () => {
         }"
       >
         <img
-          v-if="imageList.length"
-          :src="imageList[3].url"
+          v-if="memeList.length"
+          :src="memeList[3].url"
           class="w-full"
           alt="meme"
         />
